@@ -291,12 +291,12 @@ function buf2hex(buffer) { // buffer is an ArrayBuffer
       .join('');
 }
 
-function convertSharesCSVtoJSON(countsEncrypted, mTurkID, stateOfResidence) {
+function convertSharesCSVtoJSON(countsEncrypted, tag, stateOfResidence) {
   date = getYesterdaysDate();
 
   json_output = {
     'date': date,
-    'clientID': mTurkID,
+    'tag': tag,
     'state': stateOfResidence,
     'shares': [
       {
@@ -318,6 +318,15 @@ function convertSharesCSVtoJSON(countsEncrypted, mTurkID, stateOfResidence) {
   }
   
   return json_output;
+}
+
+async function generate_daily_hash(mTurkID, date) {
+  const salt = "c5e3ebdb0ed161cd"; // randomly generated, arbitrary
+  const encoder = new TextEncoder();
+  const message = mTurkID + date + salt;
+  const data = encoder.encode(message);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return buf2hex(hash);
 }
 
 // copied from Mozilla example
@@ -460,7 +469,10 @@ async function prepareAndSendDataBody(historyData, referralData, mTurkID, stateO
     };
   }
 
-  json_output = convertSharesCSVtoJSON(combinedCountsEncrypted, mTurkID, stateOfResidence);
+  date = getYesterdaysDate();
+  daily_tag = generate_daily_hash(mTurkID, date);
+
+  json_output = convertSharesCSVtoJSON(combinedCountsEncrypted, daily_tag, stateOfResidence);
   console.log(json_output);
   console.log(JSON.stringify(json_output))
   
