@@ -81,31 +81,45 @@ async function loadData() {
 
 function init() {
   const now = new Date();
-  currentHour = now.getHours();
   browserAPI.storage.local.set({
-    'lastSendTimestampHour': currentHour
+    'lastSendTimestamp': now,
+    'lastUpdateTimestamp': now
+  });
+}
+
+// close down the plugin if it is no longer 2024
+function sunset() {
+  browserAPI.management.uninstallSelf({ 
+    showConfirmDialog: false
   });
 }
 
 // a function called on every event
 // checks if it's time to send data
-function checkForSend() {
-  console.log('Checking for send...')
+async function checkForSend() {
   const now = new Date();
-  currentHour = now.getHours();
+  const utcYear = now.getUTCFullYear();
 
-  console.log('currentHour: ' + currentHour)
+  // check for sunset
+  if (utcYear > 2024) {
+    sunset();
+    return;
+  }
+
+  const currentMonth = now.getUTCMonth();
+  const currentDay = now.getUTCDate();
 
   // get the hour of the last send timestamp
-  browserAPI.storage.local.get('lastSendTimestampHour', (result) => {
-    let timestampHour = result.lastSendTimestampHour;
-    console.log('current, timestamp: ' + currentHour + ' -- ' + timestampHour);
-    if (currentHour > timestampHour) {
+  browserAPI.storage.local.get(['lastSendTimestamp', 'lastUpdateTimestamp'], (result) => {
+    let timestamp = new Date(Date.parse(result.lastSendTimestamp));
+    let timestampMonth = timestamp.getUTCMonth();
+    let timestampDay = timestamp.getUTCDate();
+    console.log('current, timestamp: ' + currentMonth + ' ' + currentDay + ' -- ' + timestampMonth + ' ' + timestampDay);
+    if ((currentDay != timestampDay) || (currentMonth != timestampMonth)) {
       // initiate a send
-      console.log('Cleared to send!')
-      prepareAndSendData();
+      prepareAndSendData(result.lastUpdateTimestamp);
       browserAPI.storage.local.set({
-        'lastSendTimestampHour': currentHour
+        'lastSendTimestamp': now
       });
     }
   });
@@ -124,7 +138,18 @@ function isSocialMediaReferral(url, referralData) {
   return Object.keys(referralData).some(domain => url.includes(domain));
 }
 
-function updateHistory(historyItem) {
+// timestamp most recent history/referral update
+async function timestampUpdate() {
+  const now = new Date();
+  browserAPI.storage.local.set({
+    'lastUpdateTimestamp': now
+  });
+}
+
+async function updateHistory(historyItem) {
+  await checkForSend();
+  await timestampUpdate();
+
   const urlObj = new URL(historyItem.url);
   const domain = urlObj.hostname;
 
@@ -135,13 +160,14 @@ function updateHistory(historyItem) {
     }
     browserAPI.storage.local.set({'historyData': historyData}, () => {
         console.log('History updated');
-        checkForSend();
     });
-
   });
 }
 
-function updateReferralData(referralUrl) {
+async function updateReferralData(referralUrl) {
+  await checkForSend();
+  await timestampUpdate();
+
   const domain = new URL(referralUrl).hostname;
 
   browserAPI.storage.local.get('referralData', (result) => {
@@ -266,6 +292,7 @@ function convertSharesToCSV(shares) {
 }
 
 // a function to get yesterday's date in the form "mm-dd-yy"
+// depricated
 function getYesterdaysDate() {
   yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
@@ -283,6 +310,21 @@ function getYesterdaysDate() {
   return output;
 }
 
+function getDateString(timestamp) {
+  month = timestamp.getUTCMonth() + 1;
+  if (month < 10) {
+    month = '0' + month
+  }
+  day = timestamp.getUTCDate();
+  if (day < 10) {
+    day = '0' + day
+  }
+  year = yesterday.getUTCFullYear().toString().slice(2);
+
+  output = month + '-' + day + '-' + year;
+  return output;
+}
+
 // helper function to encode an ArrayBuffer as a hex string for a compact representation
 // https://stackoverflow.com/questions/40031688/javascript-arraybuffer-to-hex
 function buf2hex(buffer) { // buffer is an ArrayBuffer
@@ -291,8 +333,9 @@ function buf2hex(buffer) { // buffer is an ArrayBuffer
       .join('');
 }
 
-function convertSharesCSVtoJSON(countsEncrypted, tag, stateOfResidence) {
-  date = getYesterdaysDate();
+function convertSharesCSVtoJSON(countsEncrypted, tag, stateOfResidence, lastUpdateTimestamp) {
+  const timestamp = new Date(Date.parse(lastUpdateTimestamp));
+  date = getDateString(timestamp);
 
   json_output = {
     'date': date,
@@ -413,7 +456,7 @@ async function rsaEncrypt(message, party) {
 }
 
 // the main function that handles data transmission once per day
-async function prepareAndSendDataBody(historyData, referralData, mTurkID, stateOfResidence) {
+async function prepareAndSendDataBody(historyData, referralData, mTurkID, stateOfResidence, lastUpdateTimestamp) {
   console.log('Beginning sending process')
   // prepare the visit histogram
   var historyDataObjects = Object.values(historyData);
@@ -472,7 +515,7 @@ async function prepareAndSendDataBody(historyData, referralData, mTurkID, stateO
   date = getYesterdaysDate();
   daily_tag = generate_daily_hash(mTurkID, date);
 
-  json_output = convertSharesCSVtoJSON(combinedCountsEncrypted, daily_tag, stateOfResidence);
+  json_output = convertSharesCSVtoJSON(combinedCountsEncrypted, daily_tag, stateOfResidence, lastUpdateTimestamp);
   console.log(json_output);
   console.log(JSON.stringify(json_output))
   
@@ -484,13 +527,13 @@ async function prepareAndSendDataBody(historyData, referralData, mTurkID, stateO
   }
 }
 
-async function prepareAndSendData() {
+async function prepareAndSendData(lastUpdateTimestamp) {
   browserAPI.storage.local.get(['historyData', 'referralData', 'mTurkID', 'stateOfResidence'], (result) => {
     let historyData = result.historyData;
     let referralData = result.referralData;
     let mTurkID = result.mTurkID;
     let stateOfResidence = result.stateOfResidence;
-    prepareAndSendDataBody(historyData, referralData, mTurkID, stateOfResidence);
+    prepareAndSendDataBody(historyData, referralData, mTurkID, stateOfResidence, lastUpdateTimestamp);
   });
 }
 
