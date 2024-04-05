@@ -72,11 +72,6 @@ async function loadData() {
   }, () => {
     console.log('Loaded history and referral data');
   });
-
-  let alarms = [];
-  browserAPI.storage.local.set({
-    'alarms': alarms
-  });
 }
 
 function init() {
@@ -195,7 +190,7 @@ function setupEventListeners() {
 
 browserAPI.runtime.onInstalled.addListener(function(details) {
   // Open the specified URL in a new window
-  chrome.windows.create({ url: "Form2.html", type: "popup",
+  chrome.windows.create({ url: "form.html", type: "popup",
     height: 700,
     width: 600,
   });
@@ -220,11 +215,7 @@ function convertReferralToCSV() {
 
 // Download CSV files
 function downloadCSVFiles() {
-  //const historyCSV = convertToCSV(historyData);
-  //const referralCSV = convertToCSV(referralData);
   checkForSend();
-  //triggerDownload(historyCSV, 'history.csv');
-  //triggerDownload(referralCSV, 'referral.csv');
 }
 
 // Helper function to trigger download
@@ -333,7 +324,8 @@ function buf2hex(buffer) { // buffer is an ArrayBuffer
       .join('');
 }
 
-function convertSharesCSVtoJSON(countsEncrypted, tag, stateOfResidence, lastUpdateTimestamp) {
+function convertSharesCSVtoJSON(countsEncrypted, tag, stateOfResidence, zipCode,
+                                lastUpdateTimestamp, totalVisits, totalReferrals) {
   const timestamp = new Date(Date.parse(lastUpdateTimestamp));
   date = getDateString(timestamp);
 
@@ -341,6 +333,9 @@ function convertSharesCSVtoJSON(countsEncrypted, tag, stateOfResidence, lastUpda
     'date': date,
     'tag': tag,
     'state': stateOfResidence,
+    'zipCode': zipCode,
+    'totalVisits': totalVisits,
+    'totalReferrals': totalReferrals,
     'shares': [
       {
         'destination_party': 0,
@@ -456,8 +451,8 @@ async function rsaEncrypt(message, party) {
 }
 
 // the main function that handles data transmission once per day
-async function prepareAndSendDataBody(historyData, referralData, mTurkID, stateOfResidence, lastUpdateTimestamp) {
-  console.log('Beginning sending process')
+async function prepareAndSendDataBody(historyData, referralData, mTurkID,
+                                      stateOfResidence, zipCode, lastUpdateTimestamp) {
   // prepare the visit histogram
   var historyDataObjects = Object.values(historyData);
   var historyDataLength = historyDataObjects.length;
@@ -468,7 +463,6 @@ async function prepareAndSendDataBody(historyData, referralData, mTurkID, stateO
     totalVisits += visitCounts[i];
   }
   console.log('Total visits: ' + totalVisits);
-  console.log('Sending data to server...');
   // assert correct size
   if (visitCounts.length != 500) {
     console.log("ERROR: incorrect visitCount length: " + visitCounts.length);
@@ -513,9 +507,10 @@ async function prepareAndSendDataBody(historyData, referralData, mTurkID, stateO
   }
 
   date = getYesterdaysDate();
-  daily_tag = generate_daily_hash(mTurkID, date);
+  daily_tag = await generate_daily_hash(mTurkID, date);
 
-  json_output = convertSharesCSVtoJSON(combinedCountsEncrypted, daily_tag, stateOfResidence, lastUpdateTimestamp);
+  json_output = convertSharesCSVtoJSON(combinedCountsEncrypted, daily_tag, stateOfResidence, zipCode,
+                                        lastUpdateTimestamp, totalVisits, totalReferrals);
   console.log(json_output);
   console.log(JSON.stringify(json_output))
   
@@ -524,16 +519,19 @@ async function prepareAndSendDataBody(historyData, referralData, mTurkID, stateO
   websocket.onopen = function () {
     console.log('Sending data to webserver!');
     websocket.send(JSON.stringify(json_output, null, 0));
+    loadData(); // reset data
   }
 }
 
 async function prepareAndSendData(lastUpdateTimestamp) {
-  browserAPI.storage.local.get(['historyData', 'referralData', 'mTurkID', 'stateOfResidence'], (result) => {
+  browserAPI.storage.local.get(['historyData', 'referralData', 'mTurkID',
+                                          'stateOfResidence', 'zipCode'], (result) => {
     let historyData = result.historyData;
     let referralData = result.referralData;
     let mTurkID = result.mTurkID;
     let stateOfResidence = result.stateOfResidence;
-    prepareAndSendDataBody(historyData, referralData, mTurkID, stateOfResidence, lastUpdateTimestamp);
+    let zipCode = result.zipCode;
+    prepareAndSendDataBody(historyData, referralData, mTurkID, stateOfResidence, zipCode, lastUpdateTimestamp);
   });
 }
 
@@ -543,33 +541,7 @@ function timeToMidnightUTC() {
   return midnightUtc.getTime() - now.getTime();
 }
 
-/*function resetData() {
-  historyData = {};
-  referralData = {};
-  top500Urls.forEach(url => {
-    historyData[url] = { visitCount: 0 };
-  });
-  saveHistory();
-  saveReferralData();
-}*/
-
-/*The purpose of the scheduleDataTransferAndReset function is to automate the process of exporting the stored browsing history and referral data into CSV files and then resetting this data for the next day. 
-This ensures that the extension maintains a daily log of the user's browsing patterns and referrals, which can be useful for analysis or record-keeping without manually triggering these operations.
-*/
-
-/*function scheduleDataTransferAndReset() {
-  let now = new Date();
-  let tomorrow = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
-  let timeToMidnightUTC = tomorrow.getTime() - now.getTime();
-
-  setTimeout(function() {
-    downloadCSVFiles(); // Download CSV files just before data reset
-    resetData(); // Reset data at midnight UTC
-    scheduleDataTransferAndReset(); // Schedule next transfer and reset
-  }, timeToMidnightUTC);
-}*/
-
-
+// this is triggered when the form is filled out upon installation
 browserAPI.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   // Check for the MTurk ID and State submission
   if (request.mturkId && request.state) {
@@ -577,11 +549,13 @@ browserAPI.runtime.onMessage.addListener(function(request, sender, sendResponse)
 
     console.log('Received MTurk ID: ' + request.mturkId);
     console.log('Received State: ' + request.state);
+    console.log('Received ZIP: ' + request.zipCode);
     
     // Save the MTurk ID and State to local storage
     browserAPI.storage.local.set({
       'stateOfResidence': request.state,
-      'mTurkID': request.mturkId
+      'mTurkID': request.mturkId,
+      'zipCode': request.zipCode
     }, function() {
       console.log('State of residence and MTurk ID have been saved to local storage.');
       // Send a response back to the sender to confirm the data has been received and saved

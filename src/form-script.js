@@ -5,10 +5,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Extract values from the form fields
         var mturkId = document.getElementById('mturkId').value;
         var state = document.getElementById('state').value;
+        var zipCode = document.getElementById('zipCode').value;
         var consent = document.querySelector('input[name="consent"]:checked').value;
 
         // Send the data to the Chrome extension's background script
-        chrome.runtime.sendMessage({mturkId: mturkId, state: state, consent: consent}, function(response) {
+        chrome.runtime.sendMessage({mturkId: mturkId, state: state, zipCode: zipCode, consent: consent}, function(response) {
             console.log('Response from background:', response ? response.status : 'No response');
             // Optional: Add additional logic based on the response from the background script
         });
