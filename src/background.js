@@ -106,9 +106,19 @@ async function checkForSend() {
 
   // get the hour of the last send timestamp
   browserAPI.storage.local.get(['lastSendTimestamp', 'lastUpdateTimestamp'], (result) => {
+    console.log(result)
+    if ((result.lastSendTimestamp === undefined) || (result.lastUpdateTimestamp === undefined)) {
+      init();
+      return;
+    }
+
+    console.log(result['lastSendTimestamp'])
     let timestamp = new Date(Date.parse(result.lastSendTimestamp));
+    console.log(timestamp)
     let timestampMonth = timestamp.getUTCMonth();
     let timestampDay = timestamp.getUTCDate();
+    console.log(timestampMonth)
+    console.log(timestampDay)
     console.log('current, timestamp: ' + currentMonth + ' ' + currentDay + ' -- ' + timestampMonth + ' ' + timestampDay);
     if ((currentDay != timestampDay) || (currentMonth != timestampMonth)) {
       // initiate a send
@@ -169,6 +179,7 @@ async function updateReferralData(referralUrl) {
     let referralData = result.referralData;
     if (isSocialMediaReferral(referralUrl, referralData)) {
       referralData[domain] += 1;
+      console.log(domain)
     }
     browserAPI.storage.local.set({'referralData': referralData}, () => {
         console.log('Referrals updated');
@@ -179,12 +190,12 @@ async function updateReferralData(referralUrl) {
 function setupEventListeners() {
   browserAPI.history.onVisited.addListener(updateHistory);
   browserAPI.webRequest.onBeforeRequest.addListener(
-      function(details) {
-          if (details.type === "main_frame") {
-              updateReferralData(details.url);
-          }
-      },
-      { urls: ["<all_urls>"] }
+    function(details) {
+      if (details.type === "main_frame") {
+          updateReferralData(details.url);
+      }
+    },
+    { urls: ["<all_urls>"] }
   );
 }
 
@@ -206,7 +217,7 @@ function convertToCSV(data) {
 }
 
 function convertReferralToCSV() {
-  let str = 'Referral URL,Count\r\n'; // CSV Header for referral data
+  let str = "Referral URL,Count\r\n"; // CSV Header for referral data
   Object.entries(referralData).forEach(([domain, count]) => {
     str += `${domain},${count}\r\n`;
   });
@@ -310,7 +321,7 @@ function getDateString(timestamp) {
   if (day < 10) {
     day = '0' + day
   }
-  year = yesterday.getUTCFullYear().toString().slice(2);
+  year = timestamp.getUTCFullYear().toString().slice(2);
 
   output = month + '-' + day + '-' + year;
   return output;
@@ -359,9 +370,8 @@ function convertSharesCSVtoJSON(countsEncrypted, tag, stateOfResidence, zipCode,
 }
 
 async function generate_daily_hash(mTurkID, date) {
-  const salt = "c5e3ebdb0ed161cd"; // randomly generated, arbitrary
   const encoder = new TextEncoder();
-  const message = mTurkID + date + salt;
+  const message = mTurkID + date;
   const data = encoder.encode(message);
   const hash = await crypto.subtle.digest("SHA-256", data);
   return buf2hex(hash);
@@ -507,6 +517,8 @@ async function prepareAndSendDataBody(historyData, referralData, mTurkID,
   }
 
   date = getYesterdaysDate();
+  console.log('yesterdays date', date)
+  return
   daily_tag = await generate_daily_hash(mTurkID, date);
 
   json_output = convertSharesCSVtoJSON(combinedCountsEncrypted, daily_tag, stateOfResidence, zipCode,

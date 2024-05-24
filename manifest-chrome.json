@@ -8,7 +8,7 @@
       "downloads",
       "history",
       "webRequest",
-      "alarms"
+      "webRequestBlocking"
     ],
     "host_permissions": [
       "<all_urls>",
