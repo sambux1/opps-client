@@ -77,8 +77,8 @@ async function loadData() {
 function init() {
   const now = new Date();
   browserAPI.storage.local.set({
-    'lastSendTimestamp': now,
-    'lastUpdateTimestamp': now
+    'lastSendTimestamp': JSON.stringify(now),
+    'lastUpdateTimestamp': JSON.stringify(now)
   });
 }
 
@@ -102,10 +102,10 @@ async function checkForSend() {
   }
 
   const currentMonth = now.getUTCMonth();
-  const currentDay = now.getUTCDate();
+  const currentDay = now.getUTCDate() + 1; // hererewrjewkrjhaskldfhasdlkfhsl;
 
   // get the hour of the last send timestamp
-  browserAPI.storage.local.get(['lastSendTimestamp', 'lastUpdateTimestamp'], (result) => {
+  browserAPI.storage.local.get(['lastSendTimestamp', 'lastUpdateTimestamp']).then((result) => {
     console.log(result)
     if ((result.lastSendTimestamp === undefined) || (result.lastUpdateTimestamp === undefined)) {
       init();
@@ -113,8 +113,8 @@ async function checkForSend() {
     }
 
     console.log(result['lastSendTimestamp'])
-    let timestamp = new Date(Date.parse(result.lastSendTimestamp));
-    console.log(timestamp)
+    let timestamp = new Date(Date.parse(JSON.parse(result.lastSendTimestamp)));
+    console.log('timestamp:', timestamp)
     let timestampMonth = timestamp.getUTCMonth();
     let timestampDay = timestamp.getUTCDate();
     console.log(timestampMonth)
@@ -124,7 +124,7 @@ async function checkForSend() {
       // initiate a send
       prepareAndSendData(result.lastUpdateTimestamp);
       browserAPI.storage.local.set({
-        'lastSendTimestamp': now
+        'lastSendTimestamp': JSON.stringify(now)
       });
     }
   });
@@ -147,7 +147,7 @@ function isSocialMediaReferral(url, referralData) {
 async function timestampUpdate() {
   const now = new Date();
   browserAPI.storage.local.set({
-    'lastUpdateTimestamp': now
+    'lastUpdateTimestamp': JSON.stringify(now)
   });
 }
 
@@ -158,7 +158,7 @@ async function updateHistory(historyItem) {
   const urlObj = new URL(historyItem.url);
   const domain = urlObj.hostname;
 
-  browserAPI.storage.local.get('historyData', (result) => {
+  browserAPI.storage.local.get('historyData').then((result) => {
     let historyData = result.historyData;
     if (isInTop500(historyItem.url, historyData)) {
       historyData[domain].visitCount += 1;
@@ -175,7 +175,7 @@ async function updateReferralData(referralUrl) {
 
   const domain = new URL(referralUrl).hostname;
 
-  browserAPI.storage.local.get('referralData', (result) => {
+  browserAPI.storage.local.get('referralData').then((result) => {
     let referralData = result.referralData;
     if (isSocialMediaReferral(referralUrl, referralData)) {
       referralData[domain] += 1;
@@ -294,7 +294,7 @@ function convertSharesToCSV(shares) {
 }
 
 // a function to get yesterday's date in the form "mm-dd-yy"
-// depricated
+// depricated - we don't always want to send the day before, should be based on lastUpdateTimestamp
 function getYesterdaysDate() {
   yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
@@ -336,10 +336,7 @@ function buf2hex(buffer) { // buffer is an ArrayBuffer
 }
 
 function convertSharesCSVtoJSON(countsEncrypted, tag, stateOfResidence, zipCode,
-                                lastUpdateTimestamp, totalVisits, totalReferrals) {
-  const timestamp = new Date(Date.parse(lastUpdateTimestamp));
-  date = getDateString(timestamp);
-
+                                date, totalVisits, totalReferrals) {
   json_output = {
     'date': date,
     'tag': tag,
@@ -516,13 +513,15 @@ async function prepareAndSendDataBody(historyData, referralData, mTurkID,
     };
   }
 
-  date = getYesterdaysDate();
-  console.log('yesterdays date', date)
-  return
+  //date = getYesterdaysDate();
+  //console.log('yesterdays date', date)
+  const timestamp = new Date(Date.parse(JSON.parse(lastUpdateTimestamp)));
+  date = getDateString(timestamp);
+  
   daily_tag = await generate_daily_hash(mTurkID, date);
 
   json_output = convertSharesCSVtoJSON(combinedCountsEncrypted, daily_tag, stateOfResidence, zipCode,
-                                        lastUpdateTimestamp, totalVisits, totalReferrals);
+                                        date, totalVisits, totalReferrals);
   console.log(json_output);
   console.log(JSON.stringify(json_output))
   
@@ -537,7 +536,7 @@ async function prepareAndSendDataBody(historyData, referralData, mTurkID,
 
 async function prepareAndSendData(lastUpdateTimestamp) {
   browserAPI.storage.local.get(['historyData', 'referralData', 'mTurkID',
-                                          'stateOfResidence', 'zipCode'], (result) => {
+                                          'stateOfResidence', 'zipCode', 'lastUpdateTimestamp']).then((result) => {
     let historyData = result.historyData;
     let referralData = result.referralData;
     let mTurkID = result.mTurkID;
