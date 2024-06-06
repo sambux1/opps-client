@@ -56,14 +56,10 @@ async function loadData() {
   let referralData = {};
 
   const top500UrlsData = await loadJSONData('top500Urls.json');
-  const socialMediaDomainsData = await loadJSONData('socialMediaDomains.json');
 
   top500UrlsData.urls.forEach(url => {
-      historyData[url] = {visitCount: 0 };
-  });
-
-  socialMediaDomainsData.urls.forEach(urls => {
-      referralData[urls] = 0;
+      historyData[url] = {visitCount: 0};
+      referralData[url] = {visitCount: 0};
   });
 
   browserAPI.storage.local.set({
@@ -102,23 +98,18 @@ async function checkForSend() {
   }
 
   const currentMonth = now.getUTCMonth();
-  const currentDay = now.getUTCDate() + 1; // hererewrjewkrjhaskldfhasdlkfhsl;
+  const currentDay = now.getUTCDate()+1;
 
   // get the hour of the last send timestamp
   browserAPI.storage.local.get(['lastSendTimestamp', 'lastUpdateTimestamp']).then((result) => {
-    console.log(result)
     if ((result.lastSendTimestamp === undefined) || (result.lastUpdateTimestamp === undefined)) {
       init();
       return;
     }
 
-    console.log(result['lastSendTimestamp'])
     let timestamp = new Date(Date.parse(JSON.parse(result.lastSendTimestamp)));
-    console.log('timestamp:', timestamp)
     let timestampMonth = timestamp.getUTCMonth();
     let timestampDay = timestamp.getUTCDate();
-    console.log(timestampMonth)
-    console.log(timestampDay)
     console.log('current, timestamp: ' + currentMonth + ' ' + currentDay + ' -- ' + timestampMonth + ' ' + timestampDay);
     if ((currentDay != timestampDay) || (currentMonth != timestampMonth)) {
       // initiate a send
@@ -135,12 +126,17 @@ function setupEventListeners() {
   browserAPI.webRequest.onBeforeRequest.addListener(updateReferralData, { urls: ["<all_urls>"] }, ["blocking"]);
 }
 
-function isInTop500(url, historyData) {
+/*function isInTop500(url, historyData) {
   return Object.keys(historyData).some(domain => url.includes(domain));
+}*/
+async function isInTop500(url) {
+  const top500UrlsData = await loadJSONData('top500Urls.json');
+  return top500UrlsData['urls'].some(domain => url.includes(domain));
 }
 
-function isSocialMediaReferral(url, referralData) {
-  return Object.keys(referralData).some(domain => url.includes(domain));
+async function isSocialMediaReferral(url) {
+  const socialMediaDomainsData = await loadJSONData('socialMediaDomains.json')
+  return socialMediaDomainsData['urls'].some(domain => url.includes(domain));
 }
 
 // timestamp most recent history/referral update
@@ -155,35 +151,60 @@ async function updateHistory(historyItem) {
   await checkForSend();
   await timestampUpdate();
 
-  const urlObj = new URL(historyItem.url);
-  const domain = urlObj.hostname;
+  // happens on installation, ignore
+  if (historyItem.title == "Extension Data Form") {
+    return;
+  }
+
+  const domain = new URL(historyItem.url).hostname;
 
   browserAPI.storage.local.get('historyData').then((result) => {
     let historyData = result.historyData;
-    if (isInTop500(historyItem.url, historyData)) {
-      historyData[domain].visitCount += 1;
-    }
-    browserAPI.storage.local.set({'historyData': historyData}, () => {
-        console.log('History updated');
+    isInTop500(historyItem.url).then((valid) => {
+      if (valid) {
+        // update the data and store
+        historyData[domain].visitCount += 1;
+        browserAPI.storage.local.set({'historyData': historyData}).then(() => {
+            console.log('History updated');
+        });
+      }
     });
+
   });
 }
 
-async function updateReferralData(referralUrl) {
+async function updateReferralData(initiator, destination) {
   await checkForSend();
   await timestampUpdate();
 
-  const domain = new URL(referralUrl).hostname;
+  if ((initiator === undefined) || (destination === undefined)) {
+    return;
+  }
+  
+  const initiatorDomain = new URL(initiator).hostname;
+  const destinationDomain = new URL(destination).hostname;
+
+  // check if a site is referring to itself and ignore
+  if ((initiatorDomain.includes(destinationDomain)) || (destinationDomain.includes(initiatorDomain))) {
+    return;
+  }
 
   browserAPI.storage.local.get('referralData').then((result) => {
     let referralData = result.referralData;
-    if (isSocialMediaReferral(referralUrl, referralData)) {
-      referralData[domain] += 1;
-      console.log(domain)
-    }
-    browserAPI.storage.local.set({'referralData': referralData}, () => {
-        console.log('Referrals updated');
+    isSocialMediaReferral(initiatorDomain).then((initiatorValid) => {
+      if (initiatorValid) {
+        isInTop500(destinationDomain).then((destinationValid) => {
+          if (destinationValid) {
+            // update the data and store
+            referralData[destinationDomain].visitCount += 1;
+            browserAPI.storage.local.set({'referralData': referralData}).then(() => {
+                console.log('Referrals updated');
+            });
+          }
+        });
+      }
     });
+    
   });
 }
 
@@ -192,7 +213,7 @@ function setupEventListeners() {
   browserAPI.webRequest.onBeforeRequest.addListener(
     function(details) {
       if (details.type === "main_frame") {
-          updateReferralData(details.url);
+        updateReferralData(details.initiator, details.url);
       }
     },
     { urls: ["<all_urls>"] }
@@ -479,17 +500,16 @@ async function prepareAndSendDataBody(historyData, referralData, mTurkID,
   const historySharesCSV = convertSharesToCSV(secretSharedVisitCounts);
 
   // prepare the referral histogram
-  var referralDataLength = referralData.length;
+  var referralDataObjects = Object.values(referralData);
+  var referralDataLength = referralDataObjects.length;
   var referralCounts = new Array(referralDataLength);
   var totalReferrals = 0;
-  let i = 0;
-  for (const [key, value] of Object.entries(referralData)) {
-    referralCounts[i] = value;
+  for (let i = 0; i < referralDataLength; i++) {
+    referralCounts[i] = referralDataObjects[i]["visitCount"];
     totalReferrals += referralCounts[i];
-    i++;
   }
   // assert correct size
-  if (referralCounts.length != 9) {
+  if (referralCounts.length != 500) {
     console.log("ERROR: incorrect referralCounts length: " + referralCounts.length);
     return;
   }
@@ -513,8 +533,6 @@ async function prepareAndSendDataBody(historyData, referralData, mTurkID,
     };
   }
 
-  //date = getYesterdaysDate();
-  //console.log('yesterdays date', date)
   const timestamp = new Date(Date.parse(JSON.parse(lastUpdateTimestamp)));
   date = getDateString(timestamp);
   
