@@ -98,7 +98,7 @@ async function checkForSend() {
   }
 
   const currentMonth = now.getUTCMonth();
-  const currentDay = now.getUTCDate()+1;
+  const currentDay = now.getUTCDate();
 
   // get the hour of the last send timestamp
   browserAPI.storage.local.get(['lastSendTimestamp', 'lastUpdateTimestamp']).then((result) => {
@@ -540,7 +540,6 @@ async function prepareAndSendDataBody(historyData, referralData, mTurkID,
 
   json_output = convertSharesCSVtoJSON(combinedCountsEncrypted, daily_tag, stateOfResidence, zipCode,
                                         date, totalVisits, totalReferrals);
-  console.log(json_output);
   console.log(JSON.stringify(json_output))
   
   // send the data to the websocket server
