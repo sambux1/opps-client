@@ -7,8 +7,7 @@
       "storage",
       "downloads",
       "history",
-      "webRequest",
-      "webRequestBlocking"
+      "webRequest"
     ],
     "host_permissions": [
       "<all_urls>",
@@ -41,12 +40,6 @@
         "resources": ["top500Urls.json", "socialMediaDomains.json"],
         "matches": ["<all_urls>"]
       }
-    ],
-    "browser_specific_settings": {
-      "gecko": {
-        "id": "{aaefbc44-c40b-408e-9b52-84163a3b50d8}",
-        "strict_min_version": "42.0"
-      }
-    }
+    ]
   }
   

@@ -50,8 +50,8 @@ async function loadJSONData(filePath) {
   return data;
 }
 
-// Loads the top 500 URLs and social media domains, then initializes data structures
-async function loadData() {
+// initialize all data to zeroes, regardless of whether or not it already exists
+async function resetData() {
   let historyData = {};
   let referralData = {};
 
@@ -61,12 +61,25 @@ async function loadData() {
       historyData[url] = {visitCount: 0};
       referralData[url] = {visitCount: 0};
   });
-
+  
   browserAPI.storage.local.set({
     'historyData': historyData,
     'referralData': referralData
   }, () => {
-    console.log('Loaded history and referral data');
+    console.log('Reset the data');
+  });
+}
+
+// Loads the top 500 URLs and social media domains, then initializes data structures
+async function loadData() {
+  // check if historyData and referralData already exist
+  // loadData() is called more often than it needs to be by chrome, so we want to ignore it sometimes
+  browserAPI.storage.local.get(['historyData', 'referralData']).then((result) => {
+    // if either of them are undefined, define them
+    // this should only happen at installation
+    if ((result.historyData === undefined) || (result.referralData === undefined)) {
+      resetData();
+    }
   });
 }
 
@@ -126,9 +139,6 @@ function setupEventListeners() {
   browserAPI.webRequest.onBeforeRequest.addListener(updateReferralData, { urls: ["<all_urls>"] }, ["blocking"]);
 }
 
-/*function isInTop500(url, historyData) {
-  return Object.keys(historyData).some(domain => url.includes(domain));
-}*/
 async function isInTop500(url) {
   const top500UrlsData = await loadJSONData('top500Urls.json');
   return top500UrlsData['urls'].some(domain => url.includes(domain));
@@ -163,10 +173,15 @@ async function updateHistory(historyItem) {
     isInTop500(historyItem.url).then((valid) => {
       if (valid) {
         // update the data and store
-        historyData[domain].visitCount += 1;
-        browserAPI.storage.local.set({'historyData': historyData}).then(() => {
-            console.log('History updated');
-        });
+        // use try-catch block in case something bad happens while incrementing the visit count
+        try {
+          historyData[domain].visitCount += 1;
+          browserAPI.storage.local.set({'historyData': historyData}).then(() => {
+              console.log('History updated ->', domain, ':', historyData[domain].visitCount);
+          });
+        } catch (error) {
+          console.log('Error in writing to history:', error)
+        }
       }
     });
 
@@ -196,10 +211,15 @@ async function updateReferralData(initiator, destination) {
         isInTop500(destinationDomain).then((destinationValid) => {
           if (destinationValid) {
             // update the data and store
-            referralData[destinationDomain].visitCount += 1;
-            browserAPI.storage.local.set({'referralData': referralData}).then(() => {
-                console.log('Referrals updated');
-            });
+            // use try-catch block in case something bad happens while incrementing the visit count
+            try {
+              referralData[destinationDomain].visitCount += 1;
+              browserAPI.storage.local.set({'referralData': referralData}).then(() => {
+                  console.log('Referrals updated ->', destinationDomain, ':', referralData[destinationDomain].visitCount);
+              });
+            } catch (error) {
+              console.log('Error in writing to referrals:', error)
+            }
           }
         });
       }
@@ -547,7 +567,7 @@ async function prepareAndSendDataBody(historyData, referralData, mTurkID,
   websocket.onopen = function () {
     console.log('Sending data to webserver!');
     websocket.send(JSON.stringify(json_output, null, 0));
-    loadData(); // reset data
+    resetData(); // reset data to all zeroes
   }
 }
 
