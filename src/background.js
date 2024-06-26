@@ -1,33 +1,33 @@
 const pubkeys = [
-  // PARTY 0 PUBLIC KEY
+  // PARTY 0 PUBLIC KEY (SAM)
   `-----BEGIN PUBLIC KEY-----
-  MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtVYEQWrU6blfvEvFj+qN
-  SKa6Pz6l9l+bGZddcS7tgIi5laU5EHMHmYs7WSsEwRVJKuDK9n6rnK/QnfxKSklY
-  DGWso23TC261DC3/XYR+61q6wjgB4Ki14w0hZ2nl2CxBp2X0HgNq6P19QCr9/vV3
-  XPNCh/LsxctT9H7hngBpQf+IZWvrk5fsR72lapCU5y46EcJDPe9E5+dDq+8cw/d6
-  0IAzLBGa+67rLHPKaS29+mbJOTEVvV3FZbDdDxSrc4c62be3jNQiLrDIFxMglCaO
-  SvILkOXxv2kJzixPR+Zzr4NAVb0//dcO/S1vjIRT/0LxybV1cVl9G22VvKhB/Ahq
-  2wIDAQAB
+  MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuWKeSlMAKq+AD9eXO7Wz
+  znxBjjKofwQT2x8Z2lpR/Nw4UhvCGtVWp14CvZbRwk1woqI3XAwug6YX6WOA2Jag
+  91lNOC/y4lBea2e8FJUFiKGfjXa8X53n3ugx3Cba0E9WxE7yMTv0cPed2AqPhoXS
+  oxvMozSWbGq0c3y2itCWuNWjfZTRywgA2Y/mRAG0NQMo+j9ZwOQhKL7BWIcI19gD
+  9EcMSvSV0ZSbDJPdtqRkTN0+s3XZbhyU8dXhvUMpEWWY5ncceHAhvuUhxPetBFLq
+  rI2hD6YPGFkYP8oPHzJmWb/gG3+4BwaGFlQ1XVNrmsbaVNJtmQugXSDAY+pK3W0/
+  aQIDAQAB
   -----END PUBLIC KEY-----`,
-  // PARTY 1 PUBLIC KEY
+  // PARTY 1 PUBLIC KEY (ELI)
   `-----BEGIN PUBLIC KEY-----
-  MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtVYEQWrU6blfvEvFj+qN
-  SKa6Pz6l9l+bGZddcS7tgIi5laU5EHMHmYs7WSsEwRVJKuDK9n6rnK/QnfxKSklY
-  DGWso23TC261DC3/XYR+61q6wjgB4Ki14w0hZ2nl2CxBp2X0HgNq6P19QCr9/vV3
-  XPNCh/LsxctT9H7hngBpQf+IZWvrk5fsR72lapCU5y46EcJDPe9E5+dDq+8cw/d6
-  0IAzLBGa+67rLHPKaS29+mbJOTEVvV3FZbDdDxSrc4c62be3jNQiLrDIFxMglCaO
-  SvILkOXxv2kJzixPR+Zzr4NAVb0//dcO/S1vjIRT/0LxybV1cVl9G22VvKhB/Ahq
-  2wIDAQAB
+  MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr9bJl7ns5emwQzk4Dl1N
+  IigPyi9HLOrzq0EKrfDwI5ynJxMj3+infua1Rwh6Iv2LH4BbBwamsPnX9VLxTFU4
+  VmdZK5Hq0WVXymsIx2NIpH6NOdW2bR6eHiOAEveeBileTdbYF3wpxC7ziKzH84pm
+  Jxh3xDlbn5oJqDpuUPUL7vtyCBAWPpdYN9e7hQjsn3DCDzCXNzDP5rfzBYwTgGWg
+  FCLHMLj+xxfZjbR0dP4gS0TMcTyrYkDxjT/qpeFxzix8zRu63Nmkr0G46Yswgxu7
+  cgxBta1bTD1aalenL5uYZ/iFzkSpk3pOBKzvkxvaxDOxRi8L9x/H6mK7okefja7X
+  6wIDAQAB
   -----END PUBLIC KEY-----`,
-  // PARTY 2 PUBLIC KEY
+  // PARTY 2 PUBLIC KEY (MAYANK)
   `-----BEGIN PUBLIC KEY-----
-  MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtVYEQWrU6blfvEvFj+qN
-  SKa6Pz6l9l+bGZddcS7tgIi5laU5EHMHmYs7WSsEwRVJKuDK9n6rnK/QnfxKSklY
-  DGWso23TC261DC3/XYR+61q6wjgB4Ki14w0hZ2nl2CxBp2X0HgNq6P19QCr9/vV3
-  XPNCh/LsxctT9H7hngBpQf+IZWvrk5fsR72lapCU5y46EcJDPe9E5+dDq+8cw/d6
-  0IAzLBGa+67rLHPKaS29+mbJOTEVvV3FZbDdDxSrc4c62be3jNQiLrDIFxMglCaO
-  SvILkOXxv2kJzixPR+Zzr4NAVb0//dcO/S1vjIRT/0LxybV1cVl9G22VvKhB/Ahq
-  2wIDAQAB
+  MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvfoNxQxyVBPLSbnzX/At
+  J0/6bDSdC/lDUncyoA561fFKRRGS6ZNJ3vhf6IpH/Fexiw2XkmkEiF3odMplG0dm
+  PsB2ubXxHD0MtWZMRLKqWFfuhcPbkrd+V50uiibvRgcyzdfKe2DSX0xe86qJSka4
+  j4tGjMDUJnHRiQ+uZkFRXWa+UxycXgqhjZ8Z902ZyK3UnPf32/h1g5bjkTOj7xt1
+  c8/N73H2zux+muvyQvmm8Bl+0j91GaLWpgi5t9WexMDr5G1H5GlLdUxgvCSKVT2T
+  h4Pw9uCLxLlMvV/3rtRm5HLtg1I+GBcLHmITeyJhbmqZnfI1b3S83R5P17LNv55b
+  9QIDAQAB
   -----END PUBLIC KEY-----`
 ]
 
@@ -45,9 +45,21 @@ const browserAPI = getBrowserAPI();
 
 // Asynchronously loads JSON data from local files
 async function loadJSONData(filePath) {
-  const response = await fetch(chrome.runtime.getURL(filePath));
-  const data = await response.json();
-  return data;
+  // try 3 times in case it fails
+  let attempts = 0;
+  while (attempts < 3) {
+    try {
+      const response = await fetch(chrome.runtime.getURL(filePath));
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      // I'm not sure what's causing this, so I just want to be aware of when it fails
+      console.log('Error in loading data from JSON files:', error);
+      attempts++;
+    }
+    
+    return null;
+  }
 }
 
 // initialize all data to zeroes, regardless of whether or not it already exists
@@ -55,7 +67,10 @@ async function resetData() {
   let historyData = {};
   let referralData = {};
 
-  const top500UrlsData = await loadJSONData('top500Urls.json');
+  const top500UrlsData = await loadJSONData('topURLs.json');
+  if (top500UrlsData === null) {
+    return;
+  }
 
   top500UrlsData.urls.forEach(url => {
       historyData[url] = {visitCount: 0};
@@ -140,12 +155,18 @@ function setupEventListeners() {
 }
 
 async function isInTop500(url) {
-  const top500UrlsData = await loadJSONData('top500Urls.json');
-  return top500UrlsData['urls'].some(domain => url.includes(domain));
+  const topUrlsData = await loadJSONData('topURLs.json');
+  if (topUrlsData === null) {
+    return false;
+  }
+  return topUrlsData['urls'].some(domain => url.includes(domain));
 }
 
 async function isSocialMediaReferral(url) {
-  const socialMediaDomainsData = await loadJSONData('socialMediaDomains.json')
+  const socialMediaDomainsData = await loadJSONData('socialMediaDomains.json');
+  if (socialMediaDomainsData === null) {
+    return false;
+  }
   return socialMediaDomainsData['urls'].some(domain => url.includes(domain));
 }
 
@@ -512,7 +533,7 @@ async function prepareAndSendDataBody(historyData, referralData, mTurkID,
   }
   console.log('Total visits: ' + totalVisits);
   // assert correct size
-  if (visitCounts.length != 500) {
+  if (visitCounts.length != 517) {
     console.log("ERROR: incorrect visitCount length: " + visitCounts.length);
     return;
   }
@@ -529,12 +550,17 @@ async function prepareAndSendDataBody(historyData, referralData, mTurkID,
     totalReferrals += referralCounts[i];
   }
   // assert correct size
-  if (referralCounts.length != 500) {
+  if (referralCounts.length != 517) {
     console.log("ERROR: incorrect referralCounts length: " + referralCounts.length);
     return;
   }
   var secretSharedReferralCounts = secret_share(referralCounts, totalReferrals);
   const referralSharesCSV = convertSharesToCSV(secretSharedReferralCounts);
+
+  // if no data, don't send
+  if ((totalVisits == 0) && (totalReferrals == 0)) {
+    return;
+  }
 
   // combine the history and referral counts into a single JSON object
   combinedCountsEncrypted = new Array(3);
