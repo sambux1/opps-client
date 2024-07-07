@@ -1,5 +1,1 @@
-document.addEventListener("DOMContentLoaded", function() {
-  var referrer = document.referrer;
-  console.log('Referrer: ' + referrer);
-  // Send this to background.js for processing
-});
+// this file must exist, but we don't need it to do anything

@@ -281,43 +281,6 @@ browserAPI.runtime.onInstalled.addListener(function(details) {
   });
 });
 
-// Convert data to CSV format
-function convertToCSV(data) {
-  let csvContent = "URL,Visit Count\n";
-  for (const [url, {visitCount}] of Object.entries(data)) {
-      csvContent += `"${url}",${visitCount}\n`;
-  }
-  return csvContent;
-}
-
-function convertReferralToCSV() {
-  let str = "Referral URL,Count\r\n"; // CSV Header for referral data
-  Object.entries(referralData).forEach(([domain, count]) => {
-    str += `${domain},${count}\r\n`;
-  });
-  return str;
-}
-
-// Download CSV files
-function downloadCSVFiles() {
-  checkForSend();
-}
-
-// Helper function to trigger download
-function triggerDownload(content, filename) {
-  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob); // Create a blob URL from the blob
-
-  chrome.downloads.download({
-      url: url,
-      filename: filename,
-      saveAs: true
-  }, function(downloadId) {
-      console.log('Download initiated for ', filename, ' with ID ', downloadId);
-      URL.revokeObjectURL(url); // Clean up the blob URL after initiating the download
-  });
-}
-
 // create a list of secret shares of the input array
 function secret_share(dataArray, total) {
   // the fixed point precision to use in crypten
@@ -651,15 +614,7 @@ browserAPI.runtime.onMessage.addListener(function(request, sender, sendResponse)
     // Must return true when using sendResponse asynchronously
     return true;
   }
-
-  // Check if the action to download CSV files is requested
-  if (request.action === "downloadCSVFiles") {
-    downloadCSVFiles();
-    // Send a response back to the sender to confirm the initiation of CSV file download
-    sendResponse({status: 'Initiating download of CSV files'});
-    // No need to return true here unless downloadCSVFiles is asynchronous and uses sendResponse
-  }
-
+  
   // Return true to indicate that responses are sent asynchronously
   // This is required when sendResponse is called outside of the current call stack
   return true;
