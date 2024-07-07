@@ -157,9 +157,15 @@ function setupEventListeners() {
 async function isInTop500(url) {
   const topUrlsData = await loadJSONData('topURLs.json');
   if (topUrlsData === null) {
-    return false;
+    return '';
   }
-  return topUrlsData['urls'].some(domain => url.includes(domain));
+  let domain = topUrlsData['urls'].find(domain => url.includes(domain));
+  
+  if (domain === undefined) {
+    return ''
+  } else {
+    return domain
+  }
 }
 
 async function isSocialMediaReferral(url) {
@@ -167,7 +173,13 @@ async function isSocialMediaReferral(url) {
   if (socialMediaDomainsData === null) {
     return false;
   }
-  return socialMediaDomainsData['urls'].some(domain => url.includes(domain));
+  let domain = socialMediaDomainsData['urls'].some(domain => url.includes(domain));
+  
+  if (domain === undefined) {
+    return ''
+  } else {
+    return domain
+  }
 }
 
 // timestamp most recent history/referral update
@@ -186,22 +198,22 @@ async function updateHistory(historyItem) {
   if (historyItem.title == "Extension Data Form") {
     return;
   }
-
+  
   const domain = new URL(historyItem.url).hostname;
 
   browserAPI.storage.local.get('historyData').then((result) => {
     let historyData = result.historyData;
-    isInTop500(historyItem.url).then((valid) => {
-      if (valid) {
+    isInTop500(domain).then((domainRet) => {
+      if (domainRet != '') {
         // update the data and store
         // use try-catch block in case something bad happens while incrementing the visit count
         try {
-          historyData[domain].visitCount += 1;
+          historyData[domainRet].visitCount += 1;
           browserAPI.storage.local.set({'historyData': historyData}).then(() => {
-              console.log('History updated ->', domain, ':', historyData[domain].visitCount);
+              console.log('History updated ->', domainRet, ':', historyData[domainRet].visitCount);
           });
         } catch (error) {
-          console.log('Error in writing to history:', error)
+          console.log('Error in writing to history:', error, '| URL:', domainRet)
         }
       }
     });
@@ -227,19 +239,19 @@ async function updateReferralData(initiator, destination) {
 
   browserAPI.storage.local.get('referralData').then((result) => {
     let referralData = result.referralData;
-    isSocialMediaReferral(initiatorDomain).then((initiatorValid) => {
-      if (initiatorValid) {
-        isInTop500(destinationDomain).then((destinationValid) => {
-          if (destinationValid) {
+    isSocialMediaReferral(initiatorDomain).then((initiatorDomainRet) => {
+      if (initiatorDomainRet != '') {
+        isInTop500(destinationDomain).then((destinationDomainRet) => {
+          if (destinationDomainRet != '') {
             // update the data and store
             // use try-catch block in case something bad happens while incrementing the visit count
             try {
-              referralData[destinationDomain].visitCount += 1;
+              referralData[destinationDomainRet].visitCount += 1;
               browserAPI.storage.local.set({'referralData': referralData}).then(() => {
-                  console.log('Referrals updated ->', destinationDomain, ':', referralData[destinationDomain].visitCount);
+                  console.log('Referrals updated ->', destinationDomainRet, ':', referralData[destinationDomainRet].visitCount);
               });
             } catch (error) {
-              console.log('Error in writing to referrals:', error)
+              console.log('Error in writing to referrals:', error, '| URLs:', initiatorDomainRet, '->', destinationDomainRet)
             }
           }
         });
