@@ -5,7 +5,6 @@
     "description": "OPPS: A non-profit, privacy-focused extension by Washington & Boston Universities, ensuring secure, anonymous web research.",
     "permissions": [
       "storage",
-      "downloads",
       "history",
       "webRequest",
       "webRequestBlocking"
@@ -37,7 +36,7 @@
     ],
     "web_accessible_resources": [
       {
-        "resources": ["top500Urls.json", "socialMediaDomains.json"],
+        "resources": ["topURLs.json", "socialMediaDomains.json"],
         "matches": ["<all_urls>"]
       }
     ],
