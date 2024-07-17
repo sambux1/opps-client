@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Online Privacy-Protected Synthesizer (OPPS)",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "OPPS: A non-profit, privacy-focused extension by Washington & Boston Universities, ensuring secure, anonymous web research.",
     "permissions": [
       "storage",
