@@ -274,11 +274,13 @@ function setupEventListeners() {
 }
 
 browserAPI.runtime.onInstalled.addListener(function(details) {
-  // Open the specified URL in a new window
-  chrome.windows.create({ url: "form.html", type: "popup",
-    height: 700,
-    width: 600,
-  });
+  if (details.reason == "install") {
+    // Open the specified URL in a new window
+    chrome.windows.create({ url: "form.html", type: "popup",
+      height: 700,
+      width: 600,
+    });
+  }
 });
 
 // create a list of secret shares of the input array
