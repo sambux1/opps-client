@@ -566,12 +566,30 @@ async function prepareAndSendDataBody(historyData, referralData, mTurkID,
   console.log(JSON.stringify(json_output))
   
   // send the data to the websocket server
-  websocket = new WebSocket("wss://op-ps-data.org:11243");
-  websocket.onopen = function () {
-    console.log('Sending data to webserver!');
-    websocket.send(JSON.stringify(json_output, null, 0));
-    resetData(); // reset data to all zeroes
+  try {
+    websocket = new WebSocket("wss://op-ps-data.org:11243");
+    websocket.onopen = function () {
+      console.log('Sending data to webserver!');
+      websocket.send(JSON.stringify(json_output, null, 0));
+    }
+  } catch (error) {
+    console.log("Error in Websockets send:", error)
   }
+  
+  // send the datea to the https server
+  try {
+    await fetch('https://upload.op-ps-data.org', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(json_output, null, 0)
+    });
+  } catch(error) {
+    console.log("Error in HTTPS send:", error)
+  }
+  
+  resetData(); // reset data to all zeroes
 }
 
 async function prepareAndSendData(lastUpdateTimestamp) {
