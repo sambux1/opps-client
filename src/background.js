@@ -118,15 +118,14 @@ function sunset() {
 async function checkForSend() {
   const now = new Date();
   const utcYear = now.getUTCFullYear();
+  const currentMonth = now.getUTCMonth();
+  const currentDay = now.getUTCDate();
 
   // check for sunset
-  if (utcYear > 2024) {
+  if ((utcYear > 2024) && (currentMonth > 3)) {
     sunset();
     return;
   }
-
-  const currentMonth = now.getUTCMonth();
-  const currentDay = now.getUTCDate();
 
   // get the hour of the last send timestamp
   browserAPI.storage.local.get(['lastSendTimestamp', 'lastUpdateTimestamp']).then((result) => {
